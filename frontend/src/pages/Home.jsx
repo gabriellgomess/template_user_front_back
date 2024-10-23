@@ -20,9 +20,9 @@ const Home = () => {
   let variant = 'h5'; // Default para xs
 
   if (isXl) {
-    variant = 'h1';
+    variant = 'h2';
   } else if (isLg) {
-    variant = 'h1';
+    variant = 'h2';
   } else if (isMd) {
     variant = 'h3';
   } else if (isSm) {
@@ -68,7 +68,7 @@ const Home = () => {
       </Box>
       
       
-      <Modal open={open} onClose={() => setOpen(false)} sx={{position: 'absolute', top: '50%'}}>
+      <Modal open={open} onClose={() => setOpen(false)} sx={{position: 'absolute', top: '40%'}}>
         <Box sx={{ padding: 3, backgroundColor: '#fff', margin: 'auto', width: '300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <TextField label="Email" fullWidth onChange={(e) => setEmail(e.target.value)} />
           <TextField label="Senha" type="password" fullWidth onChange={(e) => setPassword(e.target.value)} />

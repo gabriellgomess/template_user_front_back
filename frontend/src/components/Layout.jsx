@@ -90,7 +90,7 @@ const Drawer = styled(MuiDrawer, {
 export default function Layout({ children }) {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
-  const { logout } = React.useContext(AuthContext); // Usa o contexto para fazer logout
+  const { logout, user } = React.useContext(AuthContext); // Usa o contexto para fazer logout
   const navigate = useNavigate();
 
   const handleDrawerOpen = () => {
@@ -126,6 +126,16 @@ export default function Layout({ children }) {
           <Typography variant="h6" noWrap component="div">
             {`${import.meta.env.VITE_REACT_APP_NAME}`}
           </Typography>
+          <Box sx={{ ml: 'auto' }} >
+            <Typography variant="body2" sx={{ ml: 'auto' }}>
+            {user?.name}
+          </Typography>
+          <Typography variant="caption" sx={{ ml: 'auto' }}>
+            {user?.email}
+          </Typography>
+          </Box>
+          
+
         </Toolbar>
       </AppBar>
       <Drawer variant="permanent" open={open}>
