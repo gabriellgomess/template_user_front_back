@@ -22,8 +22,10 @@ class User extends Authenticatable
         'email',
         'password',
         'cpf',
-        'nivel_acesso'
+        'nivel_acesso',
+        'profile_photo'
     ];
+    
     
 
     /**

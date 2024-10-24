@@ -2,12 +2,16 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
   Box, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  IconButton, Modal, TextField, Typography, MenuItem, FormControl, InputLabel, Select
+  IconButton, Modal, TextField, Typography, MenuItem, FormControl, InputLabel, Select, Avatar
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import AlertSnackbar from '../components/AlertSnackbar'; // Importando o novo componente
+import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import AlertSnackbar from '../components/AlertSnackbar';
+import Tooltip from '@mui/material/Tooltip';
 
 const apiUrl = `${import.meta.env.VITE_REACT_APP_URL}/api/users`;
 
@@ -15,7 +19,7 @@ const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
-  const [alertData, setAlertData] = useState({ open: false, message: '', severity: 'success' }); // Estado para o Snackbar
+  const [alertData, setAlertData] = useState({ open: false, message: '', severity: 'success' });
   const [passwordValidation, setPasswordValidation] = useState({
     minLength: false,
     hasUpperCase: false,
@@ -30,7 +34,10 @@ const Users = () => {
     cpf: '',
     nivel_acesso: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    profile_photo: null, // Campo para foto de perfil
+    existing_profile_photo: null, // Armazena a foto atual no caso de edição
+    preview_photo: null // Previsão da nova imagem
   });
 
   const passwordRequirements = {
@@ -41,7 +48,6 @@ const Users = () => {
     hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(formData.password),
   };
 
-  // Função para obter todos os usuários
   const fetchUsers = async () => {
     try {
       const response = await axios.get(apiUrl, {
@@ -56,7 +62,6 @@ const Users = () => {
     }
   };
 
-  // Função para criar ou atualizar um usuário
   const handleSaveUser = async () => {
     if (formData.password !== formData.confirmPassword) {
       handleOpenAlert('As senhas não coincidem.', 'error');
@@ -69,30 +74,53 @@ const Users = () => {
     }
 
     try {
+      const formDataToSend = new FormData(); // Usando FormData para enviar arquivo
+
+      if (formData.name) formDataToSend.append('name', formData.name);
+      if (formData.email) formDataToSend.append('email', formData.email);
+      if (formData.cpf) formDataToSend.append('cpf', formData.cpf);
+      if (formData.nivel_acesso) formDataToSend.append('nivel_acesso', formData.nivel_acesso);
+      if (formData.password) formDataToSend.append('password', formData.password);
+
+      console.log("Form Data: ", formData);
+
+      // Verificar se a imagem foi removida
+      if (!formData.profile_photo) {
+        formDataToSend.append('profile_photo', null);
+        formDataToSend.append('remove_photo', true);
+      } else if (formData.profile_photo) {
+        formDataToSend.append('profile_photo', formData.profile_photo);
+      }
+
       if (formData.id) {
-        await axios.put(`${apiUrl}/${formData.id}`, formData, {
+        // Atualização de usuário
+        await axios.post(`${apiUrl}/${formData.id}?_method=PUT`, formDataToSend, {
           headers: {
             Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+            'Content-Type': 'multipart/form-data',
           },
         });
         handleOpenAlert('Usuário atualizado com sucesso!', 'success');
       } else {
-        await axios.post(apiUrl, formData, {
+        // Criação de usuário
+        await axios.post(apiUrl, formDataToSend, {
           headers: {
             Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+            'Content-Type': 'multipart/form-data',
           },
         });
         handleOpenAlert('Usuário criado com sucesso!', 'success');
       }
+
       fetchUsers();
       setOpenModal(false);
-      setFormData({ id: null, name: '', email: '', cpf: '', nivel_acesso: '', password: '', confirmPassword: '' });
+      setFormData({ id: null, name: '', email: '', cpf: '', nivel_acesso: '', password: '', confirmPassword: '', profile_photo: null, existing_profile_photo: null, preview_photo: null });
     } catch (error) {
       handleOpenAlert('Erro ao salvar usuário', 'error');
     }
   };
 
-  // Função para excluir um usuário
+
   const handleDeleteUser = async (id) => {
     try {
       await axios.delete(`${apiUrl}/${id}`, {
@@ -107,40 +135,65 @@ const Users = () => {
     }
   };
 
-  // Abrir o modal de edição/criação de usuário
   const openUserModal = (user = null) => {
     if (user) {
-      setFormData({ ...user, password: '', confirmPassword: '' });
+      setFormData({
+        ...user,
+        password: '',
+        confirmPassword: '',
+        profile_photo: null,
+        existing_profile_photo: user.profile_photo, // Armazena a foto existente
+        preview_photo: null // Limpa a pré-visualização
+      });
     } else {
-      setFormData({ id: null, name: '', email: '', cpf: '', nivel_acesso: '', password: '', confirmPassword: '' });
+      setFormData({ id: null, name: '', email: '', cpf: '', nivel_acesso: '', password: '', confirmPassword: '', profile_photo: null, existing_profile_photo: null, preview_photo: null });
     }
     setOpenModal(true);
   };
 
-  // Fechar o modal
   const handleCloseModal = () => {
     setOpenModal(false);
   };
 
-  // Atualizar a validação da senha
   const handlePasswordChange = (password) => {
     setFormData({ ...formData, password });
     setPasswordValidation(passwordRequirements);
   };
 
-  // Buscar usuários quando o componente carregar
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  // Função para abrir o alerta
   const handleOpenAlert = (message, severity = 'success') => {
     setAlertData({ open: true, message, severity });
   };
 
-  // Função para fechar o alerta
   const handleCloseAlert = () => {
     setAlertData({ ...alertData, open: false });
+  };
+
+  // Função para capturar o upload da foto e exibir pré-visualização
+  const handleProfilePhotoChange = (event) => {
+    const file = event.target.files[0];
+
+    console.log("File: ", file);
+
+    if (file) {
+      const maxSizeInMB = 2; // Defina o tamanho máximo em MB (2 MB)
+      const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+      if (file.size > maxSizeInBytes) {
+        handleOpenAlert(`A imagem deve ser menor que ${maxSizeInMB}MB`, 'error');
+        return;
+      }
+
+      const previewUrl = URL.createObjectURL(file);
+      setFormData({ ...formData, profile_photo: file, preview_photo: previewUrl });
+    }
+  };
+
+  // Função para remover a imagem de perfil
+  const handleRemovePhoto = () => {
+    setFormData({ ...formData, profile_photo: null, preview_photo: null, existing_profile_photo: null });
   };
 
   return (
@@ -165,6 +218,7 @@ const Users = () => {
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell>Foto</TableCell>
                 <TableCell>Nome</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>CPF</TableCell>
@@ -175,17 +229,22 @@ const Users = () => {
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id}>
+                  <TableCell><Avatar alt={user?.name} src={`${import.meta.env.VITE_REACT_APP_URL}/storage/${user?.profile_photo}`} /></TableCell>
                   <TableCell>{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.cpf}</TableCell>
                   <TableCell>{user.nivel_acesso}</TableCell>
                   <TableCell>
-                  <IconButton disabled={user.email === 'admin@admin' ? true : false} color="primary" onClick={() => openUserModal(user)}>
-                    <EditIcon />
-                  </IconButton>
-                    <IconButton disabled={user.email === 'admin@admin' ? true : false} color="secondary" onClick={() => handleDeleteUser(user.id)}>
-                      <DeleteIcon />
-                    </IconButton>
+                    <Tooltip title="Editar usuário" arrow>
+                      <IconButton disabled={user.email === 'admin@admin' ? true : false} color="primary" onClick={() => openUserModal(user)}>
+                        <ManageAccountsIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Remover usuário" arrow>
+                      <IconButton disabled={user.email === 'admin@admin' ? true : false} color="error" onClick={() => handleDeleteUser(user.id)}>
+                        <PersonRemoveIcon />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -194,7 +253,6 @@ const Users = () => {
         </TableContainer>
       )}
 
-      {/* Alert Snackbar Component */}
       <AlertSnackbar
         open={alertData.open}
         handleClose={handleCloseAlert}
@@ -210,7 +268,7 @@ const Users = () => {
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: 400,
+            width: { xs: '90%', sm: '50%', md: '50%' },
             bgcolor: 'background.paper',
             boxShadow: 24,
             p: 4,
@@ -219,84 +277,140 @@ const Users = () => {
           <Typography variant="h6" gutterBottom>
             {formData.id ? 'Editar Usuário' : 'Novo Usuário'}
           </Typography>
-          <TextField
-            label="Nome"
-            fullWidth
-            margin="normal"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          />
-          <TextField
-            label="Email"
-            fullWidth
-            margin="normal"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          />
-          <TextField
-            label="CPF"
-            fullWidth
-            margin="normal"
-            value={formData.cpf}
-            onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
-          />
+          <Box sx={{ display: 'flex', gap: '20px' }}>
+            <TextField
+              label="Nome"
+              fullWidth
+              margin="normal"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+            <TextField
+              label="Email"
+              fullWidth
+              margin="normal"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </Box>
+          <Box sx={{ display: 'flex', gap: '20px' }}>
+            <TextField
+              label="CPF"
+              fullWidth
+              margin="normal"
+              value={formData.cpf}
+              onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+            />
 
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Nível de Acesso</InputLabel>
-            <Select
-              value={formData.nivel_acesso}
-              onChange={(e) => setFormData({ ...formData, nivel_acesso: e.target.value })}
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Nível de Acesso</InputLabel>
+              <Select
+                value={formData.nivel_acesso}
+                onChange={(e) => setFormData({ ...formData, nivel_acesso: e.target.value })}
+              >
+                <MenuItem value={1}>Nível 1</MenuItem>
+                <MenuItem value={2}>Nível 2</MenuItem>
+                <MenuItem value={3}>Nível 3</MenuItem>
+                <MenuItem value={4}>Nível 4</MenuItem>
+                <MenuItem value={5}>Nível 5</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+            {/* Exibir a pré-visualização ou a imagem atual */}
+            {formData.preview_photo ? (
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <Avatar
+                  src={formData.preview_photo}
+                  alt="Pré-visualização da imagem"
+                  sx={{ width: 100, height: 100 }}
+                />
+              </Box>
+            ) : formData.existing_profile_photo ? (
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                <Avatar
+                  src={`${import.meta.env.VITE_REACT_APP_URL}/storage/${formData.existing_profile_photo}`}
+                  alt="Foto atual"
+                  sx={{ width: 100, height: 100 }}
+                />
+              </Box>
+            ) : (
+              <Avatar sx={{ width: 100, height: 100  }} src="/broken-image.jpg" />
+            )}
+
+            {/* Botão para upload da nova imagem */}
+            <Button variant="contained" component="label" sx={{ mt: 2, height: 'fit-content' }}>
+              Upload Foto de Perfil
+              <input type="file" hidden onChange={handleProfilePhotoChange} />
+            </Button>
+          </Box>
+
+
+          {/* Botão para remover a imagem de perfil */}
+          {formData.existing_profile_photo || formData.preview_photo ? (
+            <Button
+              variant="outlined"
+              color="secondary"
+              sx={{ mt: 2 }}
+              startIcon={<DeleteIcon />}
+              onClick={handleRemovePhoto}
             >
-              <MenuItem value={1}>Nível 1</MenuItem>
-              <MenuItem value={2}>Nível 2</MenuItem>
-              <MenuItem value={3}>Nível 3</MenuItem>
-              <MenuItem value={4}>Nível 4</MenuItem>
-              <MenuItem value={5}>Nível 5</MenuItem>
-            </Select>
-          </FormControl>
+              Remover Foto de Perfil
+            </Button>
+          ) : null}
 
           {!formData.id && (
             <>
-              <TextField
-                label="Senha"
-                type="password"
-                fullWidth
-                margin="normal"
-                value={formData.password}
-                onChange={(e) => handlePasswordChange(e.target.value)}
-              />
-              <TextField
-                label="Confirmar Senha"
-                type="password"
-                fullWidth
-                margin="normal"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              />
+              <Box sx={{ display: 'flex', gap: '20px' }}>
+                <TextField
+                  label="Senha"
+                  type="password"
+                  fullWidth
+                  margin="normal"
+                  value={formData.password}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                />
+                <TextField
+                  label="Confirmar Senha"
+                  type="password"
+                  fullWidth
+                  margin="normal"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                />
+              </Box>
+
 
               <Box>
-                <Typography variant="body2" color={passwordRequirements.minLength ? 'green' : 'red'}>
-                  - Pelo menos 8 caracteres
+                <Typography sx={{display: 'flex', alignItems: 'center', gap: '10px'}} variant="body2" color={passwordRequirements.minLength ? 'green' : 'red'}>
+                  {passwordRequirements.minLength ? <CheckCircleOutlineIcon /> : <ErrorOutlineIcon />} Pelo menos 8 caracteres
                 </Typography>
-                <Typography variant="body2" color={passwordRequirements.hasUpperCase ? 'green' : 'red'}>
-                  - Pelo menos uma letra maiúscula
+                <Typography sx={{display: 'flex', alignItems: 'center', gap: '10px'}} variant="body2" color={passwordRequirements.hasUpperCase ? 'green' : 'red'}>
+                  {passwordRequirements.hasUpperCase ? <CheckCircleOutlineIcon /> : <ErrorOutlineIcon />} Pelo menos uma letra maiúscula
                 </Typography>
-                <Typography variant="body2" color={passwordRequirements.hasLowerCase ? 'green' : 'red'}>
-                  - Pelo menos uma letra minúscula
+                <Typography sx={{display: 'flex', alignItems: 'center', gap: '10px'}} variant="body2" color={passwordRequirements.hasLowerCase ? 'green' : 'red'}>
+                  {passwordRequirements.hasLowerCase ? <CheckCircleOutlineIcon /> : <ErrorOutlineIcon />} Pelo menos uma letra minúscula
                 </Typography>
-                <Typography variant="body2" color={passwordRequirements.hasNumber ? 'green' : 'red'}>
-                  - Pelo menos um número
+                <Typography sx={{display: 'flex', alignItems: 'center', gap: '10px'}} variant="body2" color={passwordRequirements.hasNumber ? 'green' : 'red'}>
+                  {passwordRequirements.hasNumber ? <CheckCircleOutlineIcon /> : <ErrorOutlineIcon />} Pelo menos um número
                 </Typography>
-                <Typography variant="body2" color={passwordRequirements.hasSpecialChar ? 'green' : 'red'}>
-                  - Pelo menos um caractere especial
+                <Typography sx={{display: 'flex', alignItems: 'center', gap: '10px'}} variant="body2" color={passwordRequirements.hasSpecialChar ? 'green' : 'red'}>
+                  {passwordRequirements.hasSpecialChar ? <CheckCircleOutlineIcon /> : <ErrorOutlineIcon />} Pelo menos um caractere especial
+                </Typography>
+                <Typography sx={{display: 'flex', alignItems: 'center', gap: '10px'}} variant="body2" color={formData.password == formData.confirmPassword && formData.password.length > 0 ? 'green' : 'red'}>
+                  {formData.password == formData.confirmPassword && formData.password.length > 0 ? <CheckCircleOutlineIcon /> : <ErrorOutlineIcon />} Senhas coincidem
                 </Typography>
               </Box>
+            {console.log("TESTE: ", ((formData.password == formData.confirmPassword) && (formData.password.length > 0)))}
             </>
           )}
+          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'end' }}>
+            <Button variant="contained" color="primary" onClick={handleSaveUser} sx={{ mt: 2 }}>
+              {formData.id ? 'Atualizar' : 'Criar'}
+            </Button>
+          </Box>
 
-          <Button variant="contained" color="primary" fullWidth onClick={handleSaveUser} sx={{ mt: 2 }}>
-            {formData.id ? 'Atualizar' : 'Criar'}
-          </Button>
         </Box>
       </Modal>
     </Box>

@@ -17,6 +17,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import Avatar from '@mui/material/Avatar';
 import { Link, useNavigate } from 'react-router-dom';
 import menuItems from './MenuItems';
 import AuthContext from '../context/AuthContext'; // Supondo que o AuthContext gerencia o logout
@@ -126,15 +127,18 @@ export default function Layout({ children }) {
           <Typography variant="h6" noWrap component="div">
             {`${import.meta.env.VITE_REACT_APP_NAME}`}
           </Typography>
-          <Box sx={{ ml: 'auto' }} >
-            <Typography variant="body2" sx={{ ml: 'auto' }}>
-            {user?.name}
-          </Typography>
-          <Typography variant="caption" sx={{ ml: 'auto' }}>
-            {user?.email}
-          </Typography>
+          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }} >
+            <Avatar alt={user?.name} src={`${import.meta.env.VITE_REACT_APP_URL}/storage/${user?.profile_photo}`} />
+            <Box>
+              <Typography variant="body2" sx={{ ml: 'auto', lineHeight: '1px' }}>
+                {user?.name}
+              </Typography>
+              <Typography variant="caption" sx={{ ml: 'auto', lineHeight: '1px' }}>
+                {user?.email}
+              </Typography>
+            </Box>
           </Box>
-          
+
 
         </Toolbar>
       </AppBar>

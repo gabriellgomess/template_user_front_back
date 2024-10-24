@@ -446,12 +446,12 @@
                     "Usuário"
                 ],
                 "summary": "Criar Usuário",
-                "description": "Cria um novo usuário.",
+                "description": "Cria um novo usuário, opcionalmente com uma foto de perfil.",
                 "operationId": "be551c1d694a01c164966f58bfa77013",
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "name",
@@ -482,6 +482,11 @@
                                         "type": "string",
                                         "format": "password",
                                         "example": "senhaSegura123"
+                                    },
+                                    "profile_photo": {
+                                        "description": "Foto de perfil do usuário (opcional)",
+                                        "type": "file",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -535,6 +540,13 @@
                                                         "type": "string",
                                                         "example": "Este email já foi cadastrado"
                                                     }
+                                                },
+                                                "profile_photo": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "O campo profile_photo deve ser uma imagem válida."
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -559,7 +571,7 @@
                     "Usuário"
                 ],
                 "summary": "Atualizar Usuário",
-                "description": "Atualiza as informações de um usuário.",
+                "description": "Atualiza as informações de um usuário. Permite alterar a foto de perfil ou removê-la.",
                 "operationId": "070e37fc9aff78ae73860751bc990ed3",
                 "parameters": [
                     {
@@ -575,7 +587,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "properties": {
                                     "name": {
@@ -594,6 +606,17 @@
                                     "nivel_acesso": {
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "profile_photo": {
+                                        "description": "Nova foto de perfil (opcional)",
+                                        "type": "file",
+                                        "nullable": true
+                                    },
+                                    "remove_photo": {
+                                        "description": "Flag para remover a foto de perfil",
+                                        "type": "string",
+                                        "example": "true",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -618,6 +641,45 @@
                                         },
                                         "data": {
                                             "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Erro de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Erro de Validação"
+                                        },
+                                        "erros": {
+                                            "properties": {
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Este email já foi cadastrado"
+                                                    }
+                                                },
+                                                "profile_photo": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "O campo profile_photo deve ser uma imagem válida."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
