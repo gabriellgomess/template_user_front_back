@@ -214,27 +214,60 @@ const Users = () => {
       {loading ? (
         <Typography>Carregando...</Typography>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Foto</TableCell>
-                <TableCell>Nome</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>CPF</TableCell>
-                <TableCell>Nível de Acesso</TableCell>
-                <TableCell>Ações</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell><Avatar alt={user?.name} src={`${import.meta.env.VITE_REACT_APP_URL}/storage/${user?.profile_photo}`} /></TableCell>
-                  <TableCell>{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.cpf}</TableCell>
-                  <TableCell>{user.nivel_acesso}</TableCell>
-                  <TableCell>
+        <>
+          <TableContainer sx={{display: {xs: 'none', sm: 'none', md: 'block'}}} component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Foto</TableCell>
+                  <TableCell>Nome</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>CPF</TableCell>
+                  <TableCell>Nível de Acesso</TableCell>
+                  <TableCell>Ações</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell><Avatar alt={user?.name} src={`${import.meta.env.VITE_REACT_APP_URL}/storage/${user?.profile_photo}`} /></TableCell>
+                    <TableCell>{user.name}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.cpf}</TableCell>
+                    <TableCell>{user.nivel_acesso}</TableCell>
+                    <TableCell>
+                      <Tooltip title="Editar usuário" arrow>
+                        <IconButton disabled={user.email === 'admin@admin' ? true : false} color="primary" onClick={() => openUserModal(user)}>
+                          <ManageAccountsIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Remover usuário" arrow>
+                        <IconButton disabled={user.email === 'admin@admin' ? true : false} color="error" onClick={() => handleDeleteUser(user.id)}>
+                          <PersonRemoveIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          {/* Renderização de cards quando for mobile */}
+          <Box sx={{display: {xs: 'block', sm: 'block', md: 'none'}}}>
+            {users.map((user) => (
+              <Box key={user.id} sx={{display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid #ccc', borderRadius: '5px', p: 2, mb: 2}}>
+                <Box sx={{display: 'flex', gap: '15px', alignItems: 'center'}}>
+                  <Avatar alt={user?.name} src={`${import.meta.env.VITE_REACT_APP_URL}/storage/${user?.profile_photo}`} />
+                    <Typography variant="h6">{user.name}</Typography>                 
+                  </Box>
+                  <Box sx={{display: 'flex', gap: '10px'}}>                 
+                    <Box>
+                      <Typography variant="body2">{user.email}</Typography>
+                      <Typography variant="body2">{user.cpf}</Typography>
+                      <Typography variant="body2">{user.nivel_acesso}</Typography>
+                    </Box>
+                  </Box>
+                <Box sx={{display: 'flex', justifyContent: 'end'}}>
                     <Tooltip title="Editar usuário" arrow>
                       <IconButton disabled={user.email === 'admin@admin' ? true : false} color="primary" onClick={() => openUserModal(user)}>
                         <ManageAccountsIcon />
@@ -245,12 +278,12 @@ const Users = () => {
                         <PersonRemoveIcon />
                       </IconButton>
                     </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                  </Box>
+              </Box>
+            ))}
+          </Box>
+        </>
+        
       )}
 
       <AlertSnackbar
